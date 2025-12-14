@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <title>Flask API - Dark Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* ตั้งค่าตัวแปรสีสำหรับ Dark Mode */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --primary: #bb86fc;
+            --primary-hover: #9965f4;
+            --danger: #cf6679;
+            --input-bg: #2c2c2c;
+            --border-color: #333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* กล่องคอนเทนเนอร์หลัก */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* สไตล์ของการ์ดแต่ละส่วน */
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* สไตล์ช่องกรอกข้อมูล */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            font-size: 1rem;
+            box-sizing: border-box; /* สำคัญเพื่อให้ padding ไม่ดันขนาด */
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* ปุ่มหลัก */
+        button {
+            cursor: pointer;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #addBtn {
+            background-color: var(--primary);
+            color: #000;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        #addBtn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        #addResult {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        /* รายการข้อมูล */
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background-color: var(--input-bg);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        li:hover {
+            transform: translateX(5px);
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .user-detail {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ปุ่มลบ */
+        .delete-btn {
+            background-color: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h1>เพิ่มผู้ใช้ใหม่</h1>
+            <div class="input-group">
+                <input id="name" type="text" placeholder="ชื่อ (Name)" autocomplete="off">
+                <input id="age" type="number" placeholder="อายุ (Age)">
+                <button id="addBtn">✨ เพิ่มรายการ</button>
+            </div>
+            <p id="addResult"></p>
+        </div>
+
+        <div class="card">
+            <h1>รายชื่อทั้งหมด</h1>    
+            <ul id="userList">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        async function fetchUsers() {
+            try {
+                const res = await fetch("/api/users");
+                const data = await res.json();
+                const list = document.getElementById("userList");
+                list.innerHTML = "";
+                
+                data.forEach(u => {
+                    const li = document.createElement("li");
+                    
+                    // จัดรูปแบบ HTML ภายใน li ให้สวยงามขึ้น
+                    li.innerHTML = `
+                        <div class="user-info">
+                            <span class="user-name">${u.name}</span>
+                            <span class="user-detail">ID: #${u.id} | อายุ: ${u.age} ปี</span>
+                        </div>
+                    `;
+
+                    const delBtn = document.createElement("button");
+                    delBtn.textContent = "ลบ";
+                    delBtn.className = "delete-btn"; // ใส่ class เพื่อเรียกใช้ CSS
+                    
+                    delBtn.addEventListener("click", async() => {
+                        if(confirm(`ต้องการลบคุณ ${u.name} ใช่หรือไม่?`)) { // เพิ่ม Confirm กันพลาด
+                            await fetch(`/api/users/${u.id}`, {method: "DELETE"});
+                            fetchUsers();
+                        }
+                    });
+
+                    li.appendChild(delBtn);
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching users:", error);
+            }
+        }
+
+        document.getElementById("addBtn").addEventListener("click", async() => {
+            const nameInput = document.getElementById("name");
+            const ageInput = document.getElementById("age");
+            
+            const name = nameInput.value;
+            const age = parseInt(ageInput.value);
+
+            // ตรวจสอบข้อมูลก่อนส่ง (Validation)
+            if (!name || isNaN(age)) {
+                alert("กรุณากรอกชื่อและอายุให้ครบถ้วน");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/users", { 
+                    method: "POST", 
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({name, age})
+                });
+                const data = await res.json();
+                
+                // แสดงข้อความแจ้งเตือนชั่วคราว
+                const resultText = document.getElementById("addResult");
+                resultText.textContent = `✅ เพิ่ม ${name} สำเร็จ! (ID: ${data.id})`;
+                setTimeout(() => resultText.textContent = "", 3000);
+
+                // เคลียร์ค่าในช่อง Input
+                nameInput.value = "";
+                ageInput.value = "";
+                nameInput.focus();
+
+                fetchUsers();
+            } catch (error) {
+                console.error("Error adding user:", error);
+            }
+        });
+
+        fetchUsers();
+    </script>
+</body>
+</html>
